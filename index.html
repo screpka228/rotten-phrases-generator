@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Генератор гнилых высказываний</title>
+  <style>
+    :root {
+      --bg: #1b1d1a;
+      --card: #262a25;
+      --text: #e8e6d9;
+      --muted: #8f9486;
+      --accent: #b5c96a;
+      --accent-2: #d9a441;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #2b2f28 0%, var(--bg) 70%);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      padding: 24px;
+    }
+    .wrap { width: 100%; max-width: 640px; text-align: center; }
+    h1 { font-size: 2rem; margin: 0 0 8px; letter-spacing: 0.5px; }
+    .subtitle { color: var(--muted); margin: 0 0 32px; }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 36px 28px;
+      min-height: 170px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+      border: 1px solid #343a31;
+    }
+    #phrase {
+      font-size: 1.35rem;
+      line-height: 1.5;
+      margin: 0;
+      transition: opacity 0.25s ease;
+    }
+    #phrase.fade { opacity: 0; }
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 12px 22px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.1s ease, filter 0.2s ease;
+    }
+    button:hover { filter: brightness(1.1); }
+    button:active { transform: scale(0.97); }
+    #generate { background: var(--accent); color: #1b1d1a; font-weight: 600; }
+    #copy { background: #3a4036; color: var(--text); }
+    #copy.done { background: var(--accent-2); color: #1b1d1a; }
+    .history {
+      margin-top: 36px;
+      text-align: left;
+    }
+    .history h2 { font-size: 1rem; color: var(--muted); font-weight: 500; margin: 0 0 12px; }
+    .history ol { padding-left: 20px; margin: 0; color: #bfc3b3; }
+    .history li { margin-bottom: 8px; line-height: 1.4; }
+    footer { margin-top: 32px; color: #5d6356; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Генератор гнилых высказываний</h1>
+    <p class="subtitle">Мудрость, которую не просили, но получили</p>
+
+    <div class="card">
+      <p id="phrase">Нажми кнопку, и мир станет чуть циничнее.</p>
+    </div>
+
+    <div class="buttons">
+      <button id="generate">Сгенерировать</button>
+      <button id="copy">Копировать</button>
+    </div>
+
+    <section class="history" id="historySection" hidden>
+      <h2>Последние</h2>
+      <ol id="history"></ol>
+    </section>
+
+    <footer>Все фразы собраны из шаблонов. Совпадения с реальностью случайны.</footer>
+  </main>
+
+  <script>
+    const starts = [
+      "Если ты думаешь,",
+      "Запомни простую истину:",
+      "Опытные люди знают,",
+      "Ни для кого не секрет,",
+      "Философы давно доказали,",
+      "Мудрый человек понимает,",
+      "Всё просто:",
+      "Правда жизни в том, что",
+      "Бабушка всегда говорила,",
+      "Наука подтверждает,"
+    ];
+
+    const subjects = [
+      "понедельник",
+      "твоя мотивация",
+      "будильник",
+      "идеальный план",
+      "чужой успех",
+      "новый год",
+      "кофе",
+      "дедлайн",
+      "совет из интернета",
+      "твой ремонт",
+      "обещание «завтра начну»",
+      "отпуск"
+    ];
+
+    const verbs = [
+      "никогда не заканчивается хорошо",
+      "обязательно вернётся с процентами",
+      "выглядит лучше на фото",
+      "работает только в теории",
+      "требует ещё одной чашки кофе",
+      "оказывается дороже, чем казалось",
+      "всегда начинается в пятницу",
+      "стоит ровно столько, сколько ты за него не заплатил",
+      "полезнее, если его не читать",
+      "понятнее после третьей ошибки"
+    ];
+
+    const endings = [
+      "Вот и весь секрет.",
+      "Остальное — детали.",
+      "Записывай, пригодится.",
+      "Не благодари.",
+      "Кто понял, тот уже спит.",
+      "Так и живём.",
+      "Проверено на себе.",
+      ""
+    ];
+
+    const extras = [
+      "Ты сам вызвался, так что не жалуйся.",
+      "И это лучшая новость за сегодня.",
+      "Хотя кто тебя спрашивал.",
+      "Стоило бы подумать дважды, но поздно.",
+      "Главное — верить и не смотреть в чек."
+    ];
+
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    function generatePhrase() {
+      const parts = [pick(starts), pick(subjects), pick(verbs)];
+      let phrase = parts.join(" ").replace(/\s+/g, " ");
+      const ending = pick(endings);
+      if (ending) phrase += ". " + ending;
+      if (Math.random() < 0.25) phrase += " " + pick(extras);
+      return phrase;
+    }
+
+    const phraseEl = document.getElementById("phrase");
+    const copyBtn = document.getElementById("copy");
+    const historyList = document.getElementById("history");
+    const historySection = document.getElementById("historySection");
+    const history = [];
+    let current = phraseEl.textContent;
+
+    function show(text) {
+      phraseEl.classList.add("fade");
+      setTimeout(() => {
+        phraseEl.textContent = text;
+        phraseEl.classList.remove("fade");
+      }, 200);
+    }
+
+    function addToHistory(text) {
+      history.unshift(text);
+      if (history.length > 5) history.pop();
+      historyList.innerHTML = "";
+      history.forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        historyList.appendChild(li);
+      });
+      historySection.hidden = false;
+    }
+
+    document.getElementById("generate").addEventListener("click", () => {
+      current = generatePhrase();
+      show(current);
+      addToHistory(current);
+      copyBtn.textContent = "Копировать";
+      copyBtn.classList.remove("done");
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(current);
+        copyBtn.textContent = "Скопировано!";
+        copyBtn.classList.add("done");
+      } catch (e) {
+        copyBtn.textContent = "Не вышло";
+      }
+    });
+  </script>
+</body>
+</html>
